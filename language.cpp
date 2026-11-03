@@ -1,4 +1,4 @@
-// Trap Team: the text and voice language (docs: games/trapteam/docs/boot.md, "Language"). The title has one language
+// Trap Team: text and independent voices (docs: games/trapteam/docs/boot.md, "Language"). The title has one language
 // for everything. It picks it in sub_821D29B8 from the console language (XGetLanguage, wrapped by sub_8258A230: 3
 // German, 4 French, 16 Dutch...) and from which language files the disc has (3d_font_msg_<language>, the packs), and
 // keeps an IG_CORE_LANGUAGE value that Language_Get makes from the same console language (17 cases); each archive
@@ -6,8 +6,13 @@
 // lines [V]. The host sets both reads, the console language where the console has the language (Dutch is 16; Danish and
 // Finnish have none) and the value for every language of the title's list.
 #include "game_hooks.h"
+#include "host/art/alchemy_archive.h"
+#include "memory.h"
 #include "trapteam.h"
+#include "vfs.h"
 #include <cstdio>
+#include <cstring>
+#include <mutex>
 #include <string>
 #include <ppc_config.h>
 #include <ppc_context.h>
@@ -51,6 +56,75 @@ namespace
     };
 
     const Language* g_text = nullptr; // nullptr: the console language's, as the game maps it
+
+    struct VoiceLanguage
+    {
+        std::string_view code;
+        std::string_view pack;
+        uint32_t index;
+    };
+    // The two regional discs inspected: English/German and French/Dutch. A language must also be on the mounted disc.
+    constexpr VoiceLanguage VoiceLanguages[] = {
+        { "en", "ENGLISH", 6 },
+        { "de", "GERMAN", 9 },
+        { "fr", "FRENCH", 8 },
+        { "nl", "DUTCH", 5 },
+    };
+    const VoiceLanguage* g_voices = nullptr;
+    bool g_checkedVoices = false;
+    std::mutex g_voiceMutex;
+
+    const VoiceLanguage* VoicesOnDisc()
+    {
+        std::lock_guard lock(g_voiceMutex);
+        if (g_voices == nullptr)
+            return nullptr;
+        if (!g_checkedVoices)
+        {
+            // Settings arrive before the disc is mounted. Inspect only its archive index at the first hooked load.
+            g_checkedVoices = true;
+            const auto* entry = g_disc.Find("permanent/global.bld");
+            auto archive = entry == nullptr ? std::optional<art::alchemy::IgaArchive>()
+                                            : art::alchemy::IgaArchive::Open(
+                                                  [entry](uint64_t offset, size_t size, uint8_t* out) {
+                                                      return g_disc.Read(*entry, offset, out, uint32_t(size)) == size;
+                                                  },
+                                                  entry->size);
+            bool found = false;
+            if (archive)
+                for (size_t i = 0; i < archive->Count(); ++i)
+                    found |= archive->Name(i) == std::string(g_voices->pack) + ".pak";
+            if (!found)
+            {
+                fprintf(stderr, "[language] voices %s unavailable on this disc; following text\n",
+                    std::string(g_voices->code).c_str());
+                g_voices = nullptr;
+                return nullptr;
+            }
+        }
+        return g_voices;
+    }
+}
+
+bool trapteam::SetVoiceLanguage(std::string_view code)
+{
+    std::lock_guard lock(g_voiceMutex);
+    if (code.empty())
+    {
+        g_voices = nullptr;
+        g_checkedVoices = false;
+        return true;
+    }
+    for (const VoiceLanguage& language : VoiceLanguages)
+    {
+        if (language.code == code)
+        {
+            g_voices = &language;
+            g_checkedVoices = false;
+            return true;
+        }
+    }
+    return false;
 }
 
 bool trapteam::SetTextLanguage(std::string_view code)
@@ -74,6 +148,78 @@ PPC_FUNC(GAME_HOOK(Console_Language))
     GAME_IMP(Console_Language)(ctx, base);
     if (g_text != nullptr && g_text->console != 0)
         ctx.r3.u64 = g_text->console;
+}
+#endif
+
+// sub_821CD058 loads the language pack through this helper (r3: loader, r4: path, r5: directory, r6: allocator;
+// nonzero low byte = success). Only its language-pack call uses the caller's writable 2048-byte path buffer.
+// As in Giants, load the voice resources first, then the text pack into the same directory. The first sound objects
+// and the last LanguagePackInfo must win: this ordering still needs a Trap Team run (boot.md).
+#ifdef GAME_HOOK_Language_LoadPack
+PPC_FUNC_IMPL(GAME_IMP(Language_LoadPack));
+PPC_FUNC(GAME_HOOK(Language_LoadPack))
+{
+    const VoiceLanguage* voice = ctx.lr == 0x821CD4C4 ? VoicesOnDisc() : nullptr;
+    if (voice == nullptr)
+    {
+        GAME_IMP(Language_LoadPack)(ctx, base);
+        return;
+    }
+    char* path = static_cast<char*>(g_memory.Translate(ctx.r4.u32));
+    const size_t length = strnlen(path, 2048);
+    if (length == 2048)
+    {
+        GAME_IMP(Language_LoadPack)(ctx, base);
+        return;
+    }
+    const std::string original(path, length);
+    const size_t slash = original.rfind('/');
+    const std::string_view pack =
+        slash == std::string::npos ? std::string_view() : std::string_view(original).substr(slash + 1);
+    bool languagePack = false;
+    for (const VoiceLanguage& language : VoiceLanguages)
+        languagePack |= pack == std::string(language.pack) + ".pak";
+    const std::string voices = original.substr(0, slash + 1) + std::string(voice->pack) + ".pak";
+    if (!languagePack || pack == std::string(voice->pack) + ".pak" || voices.size() >= 2048)
+    {
+        GAME_IMP(Language_LoadPack)(ctx, base);
+        return;
+    }
+
+    const PPCContext saved = ctx;
+    memcpy(path, voices.c_str(), voices.size() + 1);
+    GAME_IMP(Language_LoadPack)(ctx, base);
+    const bool loaded = ctx.r3.u8 != 0;
+    // Log failures as well: accepting a code does not mean that this region's disc carries its pack.
+    fprintf(stderr, "[language] voices %s: %s %s before %s\n", std::string(voice->code).c_str(), voices.c_str(),
+        loaded ? "loaded" : "unavailable", original.c_str());
+    memcpy(path, original.c_str(), original.size() + 1);
+    ctx = saved;
+    GAME_IMP(Language_LoadPack)(ctx, base);
+}
+#endif
+
+// sub_8223A780 sets description +56 to app language (+12) + 1. The movie worker passes that track together with
+// tracks 0..3 to BinkSetSoundTrack; mode +40 == 1 requests no audio. Logos and custom track selections are left alone.
+#ifdef GAME_HOOK_Movie_Open
+PPC_FUNC_IMPL(GAME_IMP(Movie_Open));
+PPC_FUNC(GAME_HOOK(Movie_Open))
+{
+    const VoiceLanguage* voice = VoicesOnDisc();
+    if (voice == nullptr)
+    {
+        GAME_IMP(Movie_Open)(ctx, base);
+        return;
+    }
+    const uint32_t description = g_memory.Read<uint32_t>(ctx.r3.u32 + 32);
+    const uint32_t app = g_memory.Read<uint32_t>(game::LanguageAppObject);
+    if (description != 0 && app != 0 && g_memory.Read<uint32_t>(description + 40) == 0 &&
+        g_memory.Read<uint32_t>(description + 56) == g_memory.Read<uint32_t>(app + 12) + 1)
+    {
+        g_memory.Write<uint32_t>(description + 56, voice->index + 1);
+        fprintf(stderr, "[language] movie voice track %u (%s)\n", voice->index + 1, std::string(voice->code).c_str());
+    }
+    GAME_IMP(Movie_Open)(ctx, base);
 }
 #endif
 

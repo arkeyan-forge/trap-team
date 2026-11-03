@@ -9,7 +9,7 @@ Status: in the kit and off by default; the tutorial is playable ([status](docs/s
 | `addresses.h` | the guest functions to hook (`GAME_HOOK_<Name>`) and the guest data it reads |
 | `adapter.cpp` | the `game::Adapter` (`runtime/game.h`) |
 | `info.cpp` | id, name and the supported disc release (title ID, media ID, SHA-256 of `default.xex`) |
-| `game.txt` | what the player kit's SkyBuild knows about the game |
+| `game.txt` | what the player kit's Arkeyan-Builder knows about the game |
 | `config/` | XenonRecomp input: `TrapTeam.toml`, `TrapTeam_switch_tables.toml` |
 
 Build: `cmake -S . -B build-trapteam -G Ninja -DSSA_GAME=trapteam`. The generated code is `private/trapteam/ppc/` and the game's
@@ -18,6 +18,7 @@ derived data `private/trapteam/`. The engine's hooks are in `engines/alchemy/`.
 ## Docs
 | Page | What |
 |---|---|
+| [docs/100.md](docs/100.md) | what stable means for Trap Team, and what is left |
 | [docs/status.md](docs/status.md) | disc identity, status, where to start, open problems |
 | [docs/boot.md](docs/boot.md) | what broke on the way to the title and to a level |
 | [docs/research.md](docs/research.md) | public research and day 1's numbers |

@@ -1,7 +1,7 @@
 # XenonRecomp config for Skylanders: Trap Team (Xbox 360, title 41560911, the Europe disc).
 # Helper addresses from tools/sigmatch (all confidence 1.0, SSA's and Giants' inventories agree); functions and switch
 # tables from tools/find_switch_tables.py (pass 1 without, pass 2 with the pass-1 mapping, merged). Paths are relative to
-# this file laid out as the kit does (config/TrapTeam.toml, private/default.xex, ppc/): SkyBuild builds that layout from
+# this file laid out as the kit does (config/TrapTeam.toml, private/default.xex, ppc/): Arkeyan-Builder builds that layout from
 # the player's disc. Output: ppc/ (private/trapteam/ppc in the workshop).
 [main]
 file_path = "../private/default.xex"

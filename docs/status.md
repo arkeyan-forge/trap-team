@@ -23,7 +23,8 @@ movement and a jump seen over 190 s, no fault ([boot.md](boot.md) "Past the prom
 **`SKY_LEVEL` works** (2026-10-30): the adapter's `firstLevel` is `\level\level_313_tutorial` (the three-line change in `adapter.cpp`, as Giants' tutorial): the game's first
 level's two files are read from the level asked for. One tour on three levels (`tools/regress/coverage.sh trapteam <disc> private/runs/tt-tour --levels
 level_300_birdcage,level_301_the_machine,level_302_chompywurm --no-credits`): the three `coverage.tsv` lines are `ok`, each opened, 0 faults, lowest fps 11.0, 30.0 and 29.0 [V].
-**The first trap is not reached by play, but a crafted trap works** (2026-10-31: [figures.md](https://github.com/arkeyan-forge/forge/blob/main/docs/runtime/host/figures.md#acceptance-in-the-game-2026-10-31-v); blind scripted play, five runs; [boot.md](boot.md) "The first trap"): the game rejects Gusto plus ten traps ("too many Traps"), accepts one, and no villain met in 600 s of the tutorial or 480 s of `level_300_birdcage`. A later crafted villain trap works; a real capture remains unproved (`d448b32`).
+**A villain captured in play** (2026-11-02, [boot.md](boot.md#the-first-capture-2026-11-02-v)): Sheep Creep, the tutorial's first villain, into an empty Life Trap on the emulated portal; the game writes copy A of the trap (count 1, villain 20 at `figures::TrapVillainOffset`), the villain plays (LT), the trap comes off and back through the Toy Box, and a restart loads it again. Repeat: `tools/regress/trapteam_capture.sh`. Earlier: blind play met no villain, a crafted trap works ([figures.md](https://github.com/arkeyan-forge/forge/blob/main/docs/runtime/host/figures.md#acceptance-in-the-game-2026-10-31-v)).
+**Pipeline baseline** (2026-11-02): `games/trapteam/pipelines/baseline.zst`, 658 pipelines from the 56 levels and the figure tours; draw-time builds after a level opens 125-142 -> 0-1 ([pipeline_cache.md](https://github.com/arkeyan-forge/forge/blob/main/docs/runtime/gpu/pipeline_cache.md#trap-team-alchemy-trapteam)).
 Numbers and how to repeat them: [research.md](research.md) "Day 1".
 
 ### Arenas in the tour (2026-10-31) [V]
@@ -105,7 +106,7 @@ Not measured: Swap Force at the same scale (no Swap Force disc in these folders)
 
 ## Where to start
 - Build: `cmake -S . -B build-trapteam -G Ninja -DCMAKE_BUILD_TYPE=Release -DSSA_GAME=trapteam`, then
-  `nice ninja -j4 -C build-trapteam SSARecomp` (the executable is `TTRecomp`). `private/trapteam/ppc/` is made by
+  `nice ninja -j4 -C build-trapteam ArkeyanRuntime` (the executable is `Skylanders Trap Team`). `private/trapteam/ppc/` is made by
   XenonRecomp from `config/` ([day1.md](https://github.com/arkeyan-forge/forge/blob/main/docs/porting/day1.md) step 2) and `shader_cache.cpp` by
   `SKY_GAME=trapteam tools/shaders/build_cache.sh <disc> <dump dir>`.
 - The shaders come from run-time dumps (`SKY_DUMP_SHADERS`): the disc's archives are IGA **v11**, which no extractor reads yet.
@@ -113,7 +114,7 @@ Not measured: Swap Force at the same scale (no Swap Force disc in these folders)
   is up at about 15-40 s.
 
 ## Open problems
-0. **LB and RB** (tutorial, Gusto, 2026-10-31 [V]): X, B and RB each start an attack, Y (held 1 s) and LB (held 1 s) nothing; RB looks like B's dash. Y's silence may be the tutorial's (no Attack 3 yet): LB is not proved a Y alias, so the launcher has an RB row and no LB row.
+0. **LB and RB** (tutorial, Gusto, 2026-10-31 [V]): X, B and RB each start an attack, Y (held 1 s) and LB (held 1 s) nothing; RB looks like B's dash. Static inspection (2026-11-01) proves that the controller update merges LB into Y and RB into B; the host passes both. The third attack and contextual behavior still need a real run ([evidence and checks](boot.md#lb-and-independent-voices)); the launcher has an RB row and no LB row and is unchanged here.
 1. The video pool has too little room for the vertex-buffer copy (worked around **[?]**: why the console has the room is unproven) [boot.md](boot.md).
 2. **36 of 225 vertex shaders are not translated** (`TexCoord 8`, a usage XenosRecomp has no location for).
 3. The 20 s wait on the legal screen in some runs (portal `V`, `L`, `C` unanswered?) is unexplained.

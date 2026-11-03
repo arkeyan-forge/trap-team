@@ -16,4 +16,4 @@ namespace
     };
 }
 
-extern const GameInfo g_gameInfo = { "trapteam", "Skylanders: Trap Team", TrapTeamReleases, "TTRecomp" };
+extern const GameInfo g_gameInfo = { "trapteam", "Skylanders Trap Team", TrapTeamReleases, "Skylanders Trap Team" };

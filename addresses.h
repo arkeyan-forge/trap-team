@@ -47,6 +47,10 @@
 // Language_Get and the chooser sub_821D29B8: that one tests 3 (German), 4 (French) and 16 (Dutch) and which language files the disc
 // has, and falls back to English, or to French where the disc has French and Dutch.
 #define GAME_HOOK_Console_Language sub_8258A230
+// sub_821CD058's pack-loading helper: r4 path, r5 directory, boolean result (unlike Giants' zero-on-success loader).
+#define GAME_HOOK_Language_LoadPack sub_821CCFC0
+// Movie worker: description at +32; track +56, audio mode +40. Calls BinkSetSoundTrack then BinkOpen.
+#define GAME_HOOK_Movie_Open sub_824A2E40
 
 // The graphics set-up that reads the config's "Gfx/@enableVramCopy" (default 1) into three copies of the flag, and "Gfx/@dumpShaderConstants"
 // (games/trapteam/vram_copy.cpp). Found from the string; the first level's vertex buffers fill the 298 MB video pool unless it is 0.
@@ -77,6 +81,7 @@ namespace game
     constexpr uint32_t DeviceStateShift = 0x80;
     constexpr uint32_t LanguageIndex = 0;
     constexpr uint32_t LanguageCodes = 0;
+    constexpr uint32_t LanguageAppObject = 0x828940DC; // sub_821CF530; app language at +12
     constexpr uint32_t NglCurrentScene = 0;
     constexpr uint32_t Engine1CriticalSection = 0x827F8640; // sigmatch (Giants' inventory), via Xma1_LockAll
     constexpr uint32_t DeviceGlobal = 0;

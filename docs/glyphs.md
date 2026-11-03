@@ -1,6 +1,6 @@
 # Trap Team's button glyphs
 
-> **Purpose:** which pictures show a button in Trap Team, how they are found on the disc, the cells the adapter redraws, and what still shows the 360's picture · **Status:** current (2026-10-30) · **Tags:** [Xbox] [Alchemy] [TrapTeam] [V] [?]
+> **Purpose:** which pictures show a button in Trap Team, how they are found on the disc, the cells the adapter redraws, and what still shows the 360's picture · **Status:** current (2026-11-02) · **Tags:** [Xbox] [Alchemy] [TrapTeam] [V] [?]
 
 ## What the game has
 | Picture | Where | Status |
@@ -10,6 +10,9 @@
 | **The title's A**, a whole picture, 64x64 DXT5, stored upside down, guest hash `A3E90BC0BE57F49A` | `level\title.bld` (the title's text is three strings, "Press", the picture, "to begin") | **redrawn** [V] (`GlyphTextures`, as Giants' `a_button`); the first guess, that it came from the distance-field atlas, was wrong |
 | **Distance-field atlas** `fonts\360\font_001.png`, 1024x1024 (`1CB93819`), guest hash `2949820980389064` | `permanent\bootstrap.bld` | the letters (blue channel) and shapes without letters (arrows, circles, bubbles, pills); not a button picture, left alone |
 | Controller diagrams `ui_main\sprites\controls\sky2\controls_{xb1,ps4,ps3,360,wiiu_all,wii}.png`, 955x331 | `level\title.arc`, `misc\ui_options.arc` | not replaced |
+| **The world RT prompt** (above a cannon, a chest, a lever): model `Button_360_RT`, a card textured by a grey gradient (128x128 DXT1, upside down, guest hash `0AB48F4714BAD3F3`), "RT" in letters of geometry | `permanent\global.bld` | **replaced** [V] (2026-11-02): the glyph drawn on the card, the letters hidden; see "The world prompts" |
+| World flipbooks `UI_SKY4/Icons/ButtonPrompts/360/{A_Mash,RT_Mash,X_Mash}` (14 frames each, 85x85 DXT5, upside down; "A/RT/X button flipbook sprites") | `permanent\global.bld` | in `GlyphTextures`, each frame drawn as the same glyph; [?] not seen in a run (mash prompts) |
+| World LT (52x52, 32 bits a pixel, `1D8F0223BF4D7422`), large A and Y coins (model `ButtonIcons_HD_360`, 128x128 DXT1 with mips, `8446988D31491B4D`, `6DE08CB96DD4DD23`: the Y is Giants' own picture) | `permanent\global.bld` | in `GlyphTextures`; [?] not seen in a run |
 
 ## How they were found (about 2 h)
 1. **Archives.** IGA v11 is read by `runtime/host/art/alchemy_archive.cpp`; **IGZ v8 was not** (2026-10-30: it needs the tags byte-swapped as v7, the sections at 0x14, and the types' names padded to 2 bytes; no `TSTR`). Fixed, the whole disc lists: 62,727 pictures in 1,916 archives. A texture's name is the archive entry's source path only in an `.arc` (`levels/includes/ui_main/...png`); in a `.bld` the one entry is `level.bld` and its pictures have no name (`fonts/360/font_001*.png` come from the `igImage2` of `bootstrap.bld`).
@@ -43,7 +46,37 @@ The log has `[glyphs] font rgb atlas 512x256 drawn as <style>` for each. The fiv
 ## The launcher's keys [V] (2026-10-31)
 `[trapteam.input]` with `key_a=G key_b=H key_x=F key_y=B key_start=Tab key_lb=R key_rb=Y key_lt=U key_rt=O` in `SKY_SETTINGS`: the log says `keycaps: a=G b=H x=F y=B start=Tab back=Bksp`, the difficulty screen's hint reads "G Accept" and the pause's "G Accept, H Back" (keycaps); `SKY_GLYPHS_SCRIPT=ps5:100,key:115`: the cross and circle at 108 s, the keycaps again at 122 s. Frames (local) `private/runs/tgk1/t{26,94,108,122}.png`. The defaults are the runtime's and the launcher's shared Swap Force table. LB, RB, Start and the sticks were not on a screen.
 
+## The world prompts (2026-11-02)
+**Found.** The owner's shot: an "RT" card above a chest in the tutorial ("Press 3 to fire cannon" was already a keycap).
+A scan of every picture of every archive by the renderer's hash (a local tool over `alchemy_archive.cpp`: 62,727
+pictures; the hashes it gives back match the texture dumps of a run) and a contact sheet of `global.bld`'s small
+pictures found the flipbooks and coins above; the names come from the strings of `global.bld` (`Button_360_RT.mdl`,
+`360 Gesture Sprite RT 000`, `UI_SKY4/Icons/ButtonPrompts/360/RT_Mash/RT_Mash_0000.png`). The RT card above the
+cannon is none of them: a probe of the draws showed a model, two draws a frame on one card mesh (768 indices,
+vertex shaders `B1F0E0D50B9B5BEF` and `7C35D7F64961D2DF`) whose texture is the gradient, and a third (639 indices,
+the letters "RT", extruded) [V].
+
+**How it is replaced** (`glyphs::Model`, `runtime/host/glyphs.h`; the adapter's `RtCardModel`). The card's face maps
+the gradient flat (u 0.22-0.78, v 0.09-0.91, read from its vertices), turned by a texture matrix that spins (vertex
+constants c5-c8: a rotation about the centre, a sheen) [V]. While a style other than the 360's is in use: the glyph
+(the RT keycap of the bound key, R2, ZR, RT) is drawn over the gradient in the face's cell (texels 28,12-99,116,
+upside down); the renderer sets c5-c8 to the identity for the card's two shaders when the glyph is bound
+(`glyphs::UvMatrix`), so the glyph stays upright and still; the letters' draw (639 indices, XXH3 of its indices
+`66DB72A301169C73`) is skipped (`glyphs::HidesDraw`). The Xbox 360 style leaves all three as the game draws them.
+Unit test: `SSAGlyphModelsTest`.
+
+**Captures** [V]: `SKY_PORTAL_PLACE=new:450`, the tutorial route of `tools/regress/trapteam_capture.route` (the cannon
+at 157-169 s after the level opens, the first chest at about 306 s), a shot every 1.5 s (local: `private/glyphs3d-runs/proof/`).
+
+| Run | The cannon's prompt |
+|---|---|
+| `before` (no change, keyboard) | the 360's grey card with "RT" |
+| `key3` (keyboard, default keys) | a keycap "3" on the card, upright and still at 157-167 s |
+| `ps5` (`SKY_GLYPHS_SCRIPT=ps5:5`: PlayStation) | a dark R2 pill on the card; the hint's R2 too |
+| `chest` (keyboard, `[trapteam.input] key_rt=O`, to 322 s) | the cannon's card and hint read O; at 306 s the **chest's** card (the owner's scene, "Each Chapter contains 3 hidden treasure chests") reads O |
 ## What still shows the wrong picture
 - The four arrows, the envelope (and no LB/RB exists): nothing in the text uses them, see above.
 - The controller diagrams (`controls_*.png`, 955x331 photographs of a pad with leader lines; the "Game Paused" screen reached showed only Accept and Back, no Options page). Not replaced: the screen was not reached, so the guest hash of `controls_360` is unverified (the storage hash `044282E6C5B32129` is the disc's, not checked against the renderer's), and the keyboard version needs its own layout (a new `Glyph` kind and drawing path), which Giants does not have either.
-- **Not reached:** a prompt in a sentence of the tutorial ("Press X to ...") and the in-world prompts: no scripted play (A every 4 s, then the stick) met one in 190 s of `level_313_tutorial`; Start, Back, the triggers and the sticks were not seen on a screen either (only A and B in the pause menu and the title).
+- The world flipbooks, LT and the coins are listed but were not seen in a run [?]; a level's own models were not
+  probed (only `global.bld`'s prompts and the tutorial's cannon).
+- **Not reached:** a prompt in a sentence of the tutorial ("Press X to ..."): no scripted play (A every 4 s, then the stick) met one in 190 s of `level_313_tutorial`; Start, Back, LT and the sticks were not seen on a screen either (A and B in the pause menu and the title, RT on the cannon).
