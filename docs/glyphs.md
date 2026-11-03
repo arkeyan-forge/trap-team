@@ -1,6 +1,6 @@
 # Trap Team's button glyphs
 
-> **Purpose:** which pictures show a button in Trap Team, how they are found on the disc, the cells the adapter redraws, and what still shows the 360's picture · **Status:** current (2026-11-02) · **Tags:** [Xbox] [Alchemy] [TrapTeam] [V] [?]
+> **Purpose:** which pictures show a button in Trap Team, how they are found on the disc, the cells the adapter redraws, and what still shows the 360's picture · **Status:** current (2026-11-03) · **Tags:** [Xbox] [Alchemy] [TrapTeam] [V] [?]
 
 ## What the game has
 | Picture | Where | Status |
@@ -12,7 +12,8 @@
 | Controller diagrams `ui_main\sprites\controls\sky2\controls_{xb1,ps4,ps3,360,wiiu_all,wii}.png`, 955x331 | `level\title.arc`, `misc\ui_options.arc` | not replaced |
 | **The world RT prompt** (above a cannon, a chest, a lever): model `Button_360_RT`, a card textured by a grey gradient (128x128 DXT1, upside down, guest hash `0AB48F4714BAD3F3`), "RT" in letters of geometry | `permanent\global.bld` | **replaced** [V] (2026-11-02): the glyph drawn on the card, the letters hidden; see "The world prompts" |
 | World flipbooks `UI_SKY4/Icons/ButtonPrompts/360/{A_Mash,RT_Mash,X_Mash}` (14 frames each, 85x85 DXT5, upside down; "A/RT/X button flipbook sprites") | `permanent\global.bld` | in `GlyphTextures`, each frame drawn as the same glyph; [?] not seen in a run (mash prompts) |
-| World LT (52x52, 32 bits a pixel, `1D8F0223BF4D7422`), large A and Y coins (model `ButtonIcons_HD_360`, 128x128 DXT1 with mips, `8446988D31491B4D`, `6DE08CB96DD4DD23`: the Y is Giants' own picture) | `permanent\global.bld` | in `GlyphTextures`; [?] not seen in a run |
+| **The villain gauge's LT** (52x52, 32 bits a pixel, `1D8F0223BF4D7422`; the only LT picture of `global.bld`, which names `ui_sky4/hud/png/format_8888/360/hud_swapbutton.png`) | `permanent\global.bld` | **redrawn** [V] (2026-11-03), see "The villain gauge" |
+| Large A and Y coins (model `ButtonIcons_HD_360`, 128x128 DXT1 with mips, `8446988D31491B4D`, `6DE08CB96DD4DD23`: the Y is Giants' own picture) | `permanent\global.bld` | in `GlyphTextures`; [?] not seen in a run |
 
 ## How they were found (about 2 h)
 1. **Archives.** IGA v11 is read by `runtime/host/art/alchemy_archive.cpp`; **IGZ v8 was not** (2026-10-30: it needs the tags byte-swapped as v7, the sections at 0x14, and the types' names padded to 2 bytes; no `TSTR`). Fixed, the whole disc lists: 62,727 pictures in 1,916 archives. A texture's name is the archive entry's source path only in an `.arc` (`levels/includes/ui_main/...png`); in a `.bld` the one entry is `level.bld` and its pictures have no name (`fonts/360/font_001*.png` come from the `igImage2` of `bootstrap.bld`).
@@ -74,9 +75,33 @@ at 157-169 s after the level opens, the first chest at about 306 s), a shot ever
 | `key3` (keyboard, default keys) | a keycap "3" on the card, upright and still at 157-167 s |
 | `ps5` (`SKY_GLYPHS_SCRIPT=ps5:5`: PlayStation) | a dark R2 pill on the card; the hint's R2 too |
 | `chest` (keyboard, `[trapteam.input] key_rt=O`, to 322 s) | the cannon's card and hint read O; at 306 s the **chest's** card (the owner's scene, "Each Chapter contains 3 hidden treasure chests") reads O |
+## The keycap's label on a French keyboard (2026-11-03)
+**What the owner saw.** With the keyboard style, the RT keycap of the cannon's hint ("Press RT to fire cannon") showed two
+vertical bars. **Cause [V]:** a keycap shows the bound key's name on the keyboard's layout (`SDL_GetKeyFromScancode`
+without modifiers); RT's default key is the scancode `3`, and on the French layout that key types `"` without Shift, which
+Bungee draws as two bars. A probe on this Mac (French layout, `SDL_GetKeyName` of each scancode, the cocoa video driver)
+gives `1 -> &`, `2 -> é`, `3 -> "`, `4 -> '` ... `0 -> à`, and the digit with Shift; under `SDL_VIDEO_DRIVER=offscreen`
+SDL keeps the US map (`3 -> 3`), which is why every scripted run showed "3". The same keycap is drawn for the 3D RT card
+and for LT (default `1`: `&` on AZERTY). **Fix:** `glyphs::KeycapLabel` (`runtime/host/glyph_models.cpp`) shows the
+digit a number-row key types with Shift when the layout types a symbol without it (the keycap's printed digit); other keys
+are unchanged. Unit test: `SSAGlyphModelsTest` (`"` with `3` gives `3`, US `3` stays, `Backspace` gives `Bksp`). Not
+seen in a window [?]: our runs are offscreen; the owner checks it on the real layout (below).
+
+## The villain gauge (2026-11-03) [V]
+The gauge is the purple bar under the trap's hexagon, bottom centre. While the villain plays, a red timer dial sits left
+of it (`DamageClock`); once the villain is back in the trap and the bar is refilling, the dial is replaced by the
+**LT** button: `world lt 52`, the only LT picture of `global.bld` (its 43 pictures of 32 bits a pixel decoded, local tool
+over `alchemy_archive.cpp`). It is first drawn about 8 s after the villain goes back (the log's `[glyphs] world lt 52
+drawn as <style>`). Captures (a variant of `tools/regress/trapteam_villain.sh`: LT at +20 s and +28 s after the level
+opens, a shot every 2 s from +30 to +90; local `private/runs/ttg_g2`, `ttg_p1`, crops in `private/ttglyphs-runs/`):
+keyboard: a keycap "1" (the default `key_lt`); `SKY_GLYPHS_SCRIPT=ps5:5,switch:140`: an L2 pill, then ZL after the switch,
+upright. So the 0.8.0 build (commit `7ab174b` listed the texture) already redraws it in the tutorial; what the owner saw is
+not reproduced [?]: on the French layout it was the keycap `&` (fixed above), or another scene (another level's HUD,
+two players) that these runs did not reach.
+
 ## What still shows the wrong picture
 - The four arrows, the envelope (and no LB/RB exists): nothing in the text uses them, see above.
 - The controller diagrams (`controls_*.png`, 955x331 photographs of a pad with leader lines; the "Game Paused" screen reached showed only Accept and Back, no Options page). Not replaced: the screen was not reached, so the guest hash of `controls_360` is unverified (the storage hash `044282E6C5B32129` is the disc's, not checked against the renderer's), and the keyboard version needs its own layout (a new `Glyph` kind and drawing path), which Giants does not have either.
-- The world flipbooks, LT and the coins are listed but were not seen in a run [?]; a level's own models were not
+- The world flipbooks and the coins are listed but were not seen in a run [?]; a level's own models were not
   probed (only `global.bld`'s prompts and the tutorial's cannon).
-- **Not reached:** a prompt in a sentence of the tutorial ("Press X to ..."): no scripted play (A every 4 s, then the stick) met one in 190 s of `level_313_tutorial`; Start, Back, LT and the sticks were not seen on a screen either (A and B in the pause menu and the title, RT on the cannon).
+- **Not reached:** a prompt in a sentence of the tutorial ("Press X to ..."): no scripted play (A every 4 s, then the stick) met one in 190 s of `level_313_tutorial`; Start, Back and the sticks were not seen on a screen either (A and B in the pause menu and the title, RT on the cannon and its hint, LT on the villain gauge).
