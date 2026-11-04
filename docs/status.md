@@ -1,6 +1,6 @@
 # Skylanders: Trap Team (trapteam)
 
-> **Purpose:** which disc Trap Team needs, where the port stands, and where to start · **Status:** current (2026-10-30) · **Tags:** [Xbox] [XDK] [Alchemy] [TrapTeam] [V]
+> **Purpose:** which disc Trap Team needs, where the port stands, and where to start · **Status:** current (2026-11-03) · **Tags:** [Xbox] [XDK] [Alchemy] [TrapTeam] [V]
 
 ## Disc
 | | |
@@ -25,6 +25,7 @@ level's two files are read from the level asked for. One tour on three levels (`
 level_300_birdcage,level_301_the_machine,level_302_chompywurm --no-credits`): the three `coverage.tsv` lines are `ok`, each opened, 0 faults, lowest fps 11.0, 30.0 and 29.0 [V].
 **A villain captured in play** (2026-11-02, [boot.md](boot.md#the-first-capture-2026-11-02-v)): Sheep Creep, the tutorial's first villain, into an empty Life Trap on the emulated portal; the game writes copy A of the trap (count 1, villain 20 at `figures::TrapVillainOffset`), the villain plays (LT), the trap comes off and back through the Toy Box, and a restart loads it again. Repeat: `tools/regress/trapteam_capture.sh`. Earlier: blind play met no villain, a crafted trap works ([figures.md](https://github.com/arkeyan-forge/forge/blob/main/docs/runtime/host/figures.md#acceptance-in-the-game-2026-10-31-v)).
 **Pipeline baseline** (2026-11-02): `games/trapteam/pipelines/baseline.zst`, 658 pipelines from the 56 levels and the figure tours; draw-time builds after a level opens 125-142 -> 0-1 ([pipeline_cache.md](https://github.com/arkeyan-forge/forge/blob/main/docs/runtime/gpu/pipeline_cache.md#trap-team-alchemy-trapteam)).
+**The 0.1.0 path** (2026-11-03, [010.md](010.md)): the opening movie ends with Start only; a relaunch shows "Select a save slot" and continues; chapters 2 and 3 and the Academy open and play through `SKY_LEVEL` with no fault (the Academy's sky is grey there: its lighting files are not loaded by the redirect [?]); the chapter ends are not reached (the capture route drifts, 1 pass of 4). Repeat: `tools/regress/trapteam_chapters.sh`.
 Numbers and how to repeat them: [research.md](research.md) "Day 1".
 
 ### Arenas in the tour (2026-10-31) [V]

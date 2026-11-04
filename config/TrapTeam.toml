@@ -12234,3 +12234,11 @@ functions = [
     { address = 0x827E1484, size = 0x4 },
     { address = 0x827E1488, size = 0xC },
 ]
+
+# The render thread's wait for its last swap to be shown (sub_823EE370): a spin on the D3D device's swap counts (r11 the
+# device, r10 the swaps issued, +16976 the swaps shown), inlined, made a wait for the next graphics interrupt
+# (games/trapteam/swap_wait.cpp). At the top of the loop, so it runs at each turn.
+[[midasm_hook]]
+name = "TrapTeamSwapWait"
+address = 0x823EE484
+registers = ["r10", "r11"]
