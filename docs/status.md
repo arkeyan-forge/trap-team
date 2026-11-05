@@ -105,21 +105,6 @@ Not the cause: **the present** (`gpu/gpu.cpp` `Letterbox`: bilinear, exactly 1:1
 **half-size targets** (every non-table target of the frame is x2: 2560x1440, 1280x720, 640x360, 256x144, 1280x1440, 512x512, 1024x4096; the 64x2 and 256x16 tables stay guest-sized).
 Not measured: Swap Force at the same scale (no Swap Force disc in these folders); the tone-map curve's own contrast (the Laplacian also falls with contrast).
 
-## Nightmare (2026-11-05) [TrapTeam] [V]
-**Hidden until the story is beaten; `nightmare_from_start` is not hooked yet** (the runtime ignores it with a line in the log, so the
-launcher shows no toggle until it is).
-- A new save's "Select a difficulty" (after the slot's New Game) has three choices, Easy, **Medium** (highlighted) and Hard; Right at
-  Hard stays on Hard, Left at Easy on Easy: no fourth, no padlock (run `nm-tt-explore3`, the frames under `private/runs/`).
-- The fourth exists: the title level's scripts (`level/Title.bld`, read with the IGA v11 reader; names only) hold `Menu Diff Button
-  Name 003 Nightmare`, `Menu - 3d - Diff - Nightmare Button Action`, the save slot's `allow nightmare difficulty` (in `Title - Save
-  Slot Load/Save`) and the difficulty menu's parameter `disallow nightmare setting` (in `Menu - 3d - Diff - Create`); `global.bld`
-  has `adventure mode complete - nightmare`, and the achievements "Complete Story Mode on the Nightmare difficulty setting".
-- Why no hook yet: unlike Swap Force and Imaginators, the executable has no `nightmare_difficulty_unlocked` and no native check (no
-  shape match of Swap Force's `sub_829CC788` or of its menu's `sub_82C12BC0`); the decision is a script variable of the title
-  level. The lead: script variables are `ScriptReference` objects, as Giants' portal prompt reads them ([Giants' boot.md](https://github.com/arkeyan-forge/giants/blob/main/docs/boot.md),
-  "Portal prompt"); answering `allow nightmare difficulty` (or clearing `disallow nightmare setting`) where the script reads it
-  needs the script VM's variable read, not found yet.
-
 ## Where to start
 - Build: `cmake -S . -B build-trapteam -G Ninja -DCMAKE_BUILD_TYPE=Release -DSSA_GAME=trapteam`, then
   `nice ninja -j4 -C build-trapteam ArkeyanRuntime` (the executable is `Skylanders Trap Team`). `private/trapteam/ppc/` is made by
