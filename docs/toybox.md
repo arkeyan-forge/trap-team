@@ -10,7 +10,7 @@ Trap Team's is data: its catalogue entry ([art.md](art.md)), its pictures from t
 | Seats | Player 1, Player 2 ("needs a 2nd controller"), **Trap**, Magic item, Adventure (the catalogue's 5 seats); figure cards with the game's own pictures |
 | A core on Player 1 | Fling Kong: `P1: Fling Kong on slot 0`, the game takes it |
 | A trap on the Trap seat | Biter's Bane (an empty Magic Trap, shape 2): its own slot (4), the game takes it; its picture is the trap-screen picture of that shape |
-| A trap's sheet | picture, name = the shape, "Magic Trap · Trap shape · Magic", **"Can hold 3 villains"**: the villains of the trap's element from the game's table, their vault pictures and names |
+| A trap's sheet | picture, name = the shape, "Magic Trap · Shape · Magic", **"Can hold 3 villains"**: the villains of the trap's element from the game's table, their vault pictures and names |
 | Sheets | a Trap Master (Gusto), an Eon's Elite (Eruptor, badge), a mini (Trigger Snappy) |
 | Add a figure | by element (Magic ... Dark), then "Minis and sidekicks" and "Traps" (the 11 traps, their 61 shapes and decorations as versions); 180 toys read by the game; every portrait is the game's |
 

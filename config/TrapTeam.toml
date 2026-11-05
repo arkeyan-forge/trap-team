@@ -10,12 +10,19 @@ switch_table_file_path = "TrapTeam_switch_tables.toml"
 
 skip_lr = false
 skip_msr = false
-ctr_as_local = false
-xer_as_local = false
-reserved_as_local = false
-cr_as_local = false
-non_argument_as_local = false
-non_volatile_as_local = false
+ctr_as_local = true
+xer_as_local = true
+reserved_as_local = true
+cr_as_local = true
+non_argument_as_local = true
+non_volatile_as_local = true
+# Functions XenonRecomp keeps in the context (every register a PPCContext field): they read a register their caller
+# set outside the ABI. Written by tools/xenonrecomp/local_reads.py --toml (docs/tools/toolchain/xenonrecomp.md).
+context_functions = [
+    0x821B53B0, 0x82303338, 0x82591F74, 0x82592440, 0x825927D0, 0x825DD100, 0x825DEDB0, 0x825DF570,
+    0x825E9DA8, 0x826B73B8, 0x826B7498, 0x826B7F88, 0x826B8DB0, 0x82748640, 0x8279BED8, 0x827ACC74,
+    0x827B1018, 0x827B8160, 0x827B8404, 0x827D51A0,
+]
 
 restgprlr_14_address = 0x827ABFD0
 savegprlr_14_address = 0x827ABF80
