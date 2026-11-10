@@ -1,6 +1,6 @@
 # Skylanders: Trap Team (trapteam)
 
-> **Purpose:** which disc Trap Team needs, where the port stands, and where to start · **Status:** current (2026-11-03) · **Tags:** [Xbox] [XDK] [Alchemy] [TrapTeam] [V]
+> **Purpose:** which disc Trap Team needs, where the port stands, and where to start · **Status:** current (2026-11-10) · **Tags:** [Xbox] [XDK] [Alchemy] [TrapTeam] [V]
 
 ## Disc
 | | |
@@ -105,8 +105,114 @@ Not the cause: **the present** (`gpu/gpu.cpp` `Letterbox`: bilinear, exactly 1:1
 **half-size targets** (every non-table target of the frame is x2: 2560x1440, 1280x720, 640x360, 256x144, 1280x1440, 512x512, 1024x4096; the 64x2 and 256x16 tables stay guest-sized).
 Not measured: Swap Force at the same scale (no Swap Force disc in these folders); the tone-map curve's own contrast (the Laplacian also falls with contrast).
 
+## The title logo's black outline on a Windows PC (2026-11-10) [?]
+**Reported** (0.9.4, Windows 11, RTX 3060 Laptop, Vulkan, scale 2, anisotropy 4, edge smoothing Game, HD textures on and off):
+the logo's letters have thick black sides and no white glow around the logo; "the 3D models are not clean", the grass poor.
+**Not reproduced on the Mac** [V]: the same title at scale 2 (2240x1408 scene to a 1280x720 window) and the same settings
+on Metal and on Vulkan (MoltenVK build, also scale 1, also with `MVK_CONFIG_FAST_MATH_ENABLED=0`) shows the white glow and
+dark-teal letter sides; Chapter 2's grass and models are sharp. The logo is a 3D model drawn into three targets (colour,
+normal, a mask whose red marks the glowing rim) and lit by a full-screen deferred pass (`DABCC7B24007F225`: normal, ramps,
+a cube map, specular through `log2`/`exp2`); our scale, downscale, FXAA and anisotropy paths all run there.
+**The shaders are not the cause** [V]: the run-time containers of the title (`SKY_DUMP_SHADERS`) translated by the
+Windows kit's XenosRecomp (llvm-mingw, under Wine) give the same HLSL as the Mac's for all 82 pixel shaders, and the
+SPIR-V of all 225 shaders is byte-identical (`tools/shaders/compare_cache.py`; the DXIL differs, as each DXC build signs
+its own). So the PC ran the very SPIR-V that renders correctly here: the difference is in how the NVIDIA Vulkan driver
+runs it (a value the specification leaves undefined, such as `clamp` of a NaN or a denormal, is the likely kind) [?].
+**On the PC** (0.9.5, D3D12 by default): the title with D3D12, then F3 > Graphics API > Vulkan (next start), a shot of
+each; if D3D12 is clean, the fault is the Vulkan driver's path. If both show it: Texture filtering Off, then Edge
+smoothing None, then Resolution scale x1, one at a time, a shot each. Mac reference shots: `private/shots095c/`.
+**0.9.5 on the PC** (D3D12, 60 fps): the same, in D3D12 and in Vulkan: no white glow, a grey-teal band where the Mac has
+the glow, the frame darker. **Not the x86-64 CPU** [V] (2026-11-10): an x86_64 build of the title with the Windows kit's
+CPU flags (`-march=btver2 -mno-sse4a`: no FMA, so `fmadd` and `vmaddfp` are not fused as on arm64), run under Rosetta
+on the Mac's GPU, shows the white glow; so does the Windows executable itself (llvm-mingw, `-O2`) under Wine on D3D12
+(vkd3d-proton) on lavapipe (`tools/windows/d3d12_test.sh`, `GAME=trapteam`, `SKY_PRESS=` stays on the title). One frame's
+`[dump]` lines (`SKY_DUMP_FRAME=f900 SKY_DUMP_VS_CONSTANTS=12`), arm64 against x86_64: the same 2118 lines, draws,
+targets, blend states and vertex streams; only the values that follow the animation clock differ (the frame came at
+36.5 s and 34.9 s). The glow is also there at 60 fps on the Mac, and the Khronos layer's synchronization validation
+(MoltenVK build, `-DARKEYAN_MACOS_VULKAN=ON -DARKEYAN_VULKAN_VALIDATION=ON`) reports no hazard on the title. What is
+left is the NVIDIA driver, whose D3D12 and Vulkan share one shader compiler [?]: a value the specifications leave
+undefined (NaN through `log2`/`exp2`, a flushed denormal, a target read while written). The next step needs the PC: one
+frame's targets, pass by pass, against the Mac's ([test_095_windows.md](https://github.com/arkeyan-forge/forge/blob/main/docs/release/test_095_windows.md),
+"The title logo"). Note for an x86_64 macOS build (never shipped): Apple clang called `_tlv_get_addr` for
+`t_insideKickOff` (`d3d/null_gpu.cpp`, in the `BlockOnFence` hook, whose frame is realigned for a 64-byte `PPCContext`
+copy) with the descriptor in `r9`, not `rdi`, so the first fence wait crashed; reading it in a `noinline` helper avoids it.
+**Where the glow comes from** [V] (2026-11-10, the title frame, `SKY_DUMP_FRAME=f900 SKY_DUMP_DRAWS=1`): the deferred
+lighting pass `DABCC7B24007F225` writes, in the scene's alpha, `0.5 + 0.5 x` the rim mask of the logo's third G-buffer
+target (S4.z) or the brightness over a threshold; the bright pass `E7841B53A63F9CF3` (1280x720) keeps `|2a - 1|` of four
+taps as the glow's weight; `86540393DB1FCA1F` and `BEA6F55F99140665` blur it at 1280x720 and 640x360; `B9C585B73738EC5B`
+adds both blurs to the scene (and brightens it where `a > 0.5`). The PC's picture is our frame **before** `B9C585`
+(the pale rim, no white halo): on NVIDIA that chain adds nothing, or the alpha it starts from is 0.5 at the rim.
+**Not NaN or infinities** [V]: `SKY_DUMP_FLOATS` reads every target of every draw of the frame back as floats: 211
+targets, no NaN, no infinity (the only negatives are the linear depth's view-space Z); all but the depth targets and one
+cleared RGBA16F light buffer are RGBA8 UNORM, which turn a NaN into 0 on every GPU. The clamped log, reciprocal and
+reciprocal square root (`clamp(op(x), -FLT_MAX, FLT_MAX)`) do lean on infinities that DXC's `fast` arithmetic and SPIR-V
+without `SignedZeroInfNanPreserve` let a driver ignore, so NVIDIA may drop that clamp; but the title translated with the
+clamps removed (IEEE infinities, Metal) keeps its glow, so that is not the cause. An infinity-free form of the three ops
+(`xeLog`, `xeRcp`, `xeRsq` in `shader_common.h`, with a CPU test) waits on a local branch: it changes
+every shader of the six games, so it ships only if the PC proves it matters. Not a target read before it is written
+either: the RGBA16F buffer the lighting reads is cleared in the frame (`[dump] clear` lines).
+**The six games, one frame each** [V] (`SKY_DUMP_FLOATS`, resolves and textures): SSA level_027 389 targets, Giants'
+tutorial 196, Trap Team's level_313_tutorial 312, SuperChargers' intro at 235 s 167, Imaginators at 65 s (before its
+first level) 98: no NaN, no infinity. Swap Force's tutorial_a 107: one, its deferred light buffer (below).
+**Left for the PC** [?], what its log settles ([test_095_windows.md](https://github.com/arkeyan-forge/forge/blob/main/docs/release/test_095_windows.md), "The
+title logo"; `tools/regress/compare_dump_floats.py`): which of the chain's targets first leaves the Mac's numbers (the
+Mac: the lighting's alpha mean 0.509, the bright pass's 0.018). If the logo's G-buffer already differs, the cause is
+upstream (the vertex normals' DEC3N unpacking, `spec 1`; the three-target draw); if only the lighting's alpha, a value
+NVIDIA's compiler takes another way there (`r3.w > r2.w`, `saturate`, the cube fetch); if only the blurs or `B9C585`, their
+samplers or constants. Also noted: plume's D3D12 pipelines leave `IndependentBlendEnable` off, so every target of a
+draw takes target 0's blend and write mask on D3D12 (Vulkan and Metal use each target's own); fixed with the cause below.
+**The unwritten targets were not the cause** (2026-11-10, build 6f2ef6e7 on the PC) [V]: with them masked the PC's
+`#170` and `#176` stay 0 and the glow stays black. Nothing ever writes those two targets (a run that clears every new
+target to a known colour finds it there at frame 2947): they hold what a new texture holds, 1, 0, 1, 1 on Apple and 0
+on NVIDIA, and a Mac run with them at 0 still draws the white glow. The mask is right for Xenos and stays.
+**An NVIDIA cause, fixed** [V] (Mac; the PC: [?]): the screen-space passes fetch at the pixel position with
+unnormalized coordinates (`tfetch2DDenorm`), which land exactly on texel h's left and top edge. Apple and AMD read texel
+h; NVIDIA reads h - 1. The PC's 8-bit dump (40 s, `private/nvdump/frames/ttdump/`) shows it: each of `aa563ab8` and
+`de43d527` (the edge-aware blurs before the lighting) moves its picture one host pixel right and down against the
+G-buffer (2 after both), and the lit scene `#66` is off by one (`private/g095/shift.py`; the Mac's are at 0, 0). A Mac
+shader cache that puts the coordinate 1/1024 of a texel before the edge reproduces exactly these shifts and the thin
+dark line along the logo's outer edge; the fix puts it 1/256 of a texel inside the texel (`DENORM_TEXEL`,
+[shaders.md](https://github.com/arkeyan-forge/forge/blob/main/docs/runtime/gpu/shaders.md)), and with the same emulation the shifts are 0 and the edge is clean
+(`private/g095/shots/m14.png`). Without the emulation the Mac's frame looks the same; every target's mean stays within 0.012 of an unfixed
+run, where two unfixed runs already differ by up to 0.007 in the same glow targets (`#109` moves 0.02 between any runs).
+**The rim: NVIDIA read every cube map as 0, fixed** [V] (Mac; the PC: [?]) (2026-11-10, build 80b0488d's dump at 40 s, every
+draw, against a Mac dump at the same settings, `private/h095/`): the logo sits 9 host pixels lower on the PC (its bobbing),
+so the two are compared after that shift, pixel by pixel. Every input of the lighting `DABCC7B24007F225` is the same on the
+rim (colour, normals, the mask, depth, the blurred `#116`) and so are its constants; its output is not, and only where the
+mask is (255, 95, 60): there 0.51 x the Mac's (77 against 154), where the classes (0, 0, 0) and (0, 255, 0) match (0.98).
+The rim's mask makes it a metal: its specular colour is the albedo and its cube-map reflection (`tfetchCubeLod`, LOD
+6 - 6 x mask.g = 3.8) carries most of its light. A Mac shader cache whose cube fetch returns 0 gives the PC's numbers on
+every class (rim 61, 77, 78 against the PC's 61, 77, 79; (0, 255, 0) 94, 180, 209 against 94, 180, 209). The cause: a cube
+map bound with no swizzle went into the cube heap with plume's default view, which follows the resource, a 2D array of
+six slices on D3D12 (`CreateShaderResourceView(nullptr)`) and Vulkan (`VK_IMAGE_VIEW_TYPE_2D_ARRAY`), read by a shader that
+declares `TextureCube`: undefined, 0 on NVIDIA, the faces on AMD and Apple. Every cube map and stacked array now gets a
+view of the type its heap declares (`gpu/heap_view.h`, [plume_backends.md](https://github.com/arkeyan-forge/forge/blob/main/docs/runtime/gpu/plume_backends.md)), in
+every game. Metal changes too: the rim is lit at 134 instead of 154 (the classes at LOD 0 move by 1 %), and the white
+glow stays; on lavapipe (the Windows executable under Wine and vkd3d-proton, a conformant driver) the same change moves
+the rim from 174 to 153, so the old read was off on Apple and lavapipe as well, and the cube view is the right one
+(lavapipe's frame is brighter everywhere, another difference, open). SSA, Swap Force, Trap Team, SuperChargers and
+Imaginators bind cube maps (Giants' `level_203` none): a level of each, before and after, shows no visible change
+(`private/h095/shots/six.png`). The Khronos layer, with and without GPU-assisted validation, does
+not report the old view on MoltenVK (bindless heaps). The owner's check: [test_095_windows.md](https://github.com/arkeyan-forge/forge/blob/main/docs/release/test_095_windows.md),
+"The title logo".
+
+## Nightmare (2026-11-05) [TrapTeam] [V]
+**Hidden until the story is beaten; `nightmare_from_start` is not hooked yet** (the runtime ignores it with a line in the log, so the
+launcher shows no toggle until it is).
+- A new save's "Select a difficulty" (after the slot's New Game) has three choices, Easy, **Medium** (highlighted) and Hard; Right at
+  Hard stays on Hard, Left at Easy on Easy: no fourth, no padlock (run `nm-tt-explore3`, the frames under `private/runs/`).
+- The fourth exists: the title level's scripts (`level/Title.bld`, read with the IGA v11 reader; names only) hold `Menu Diff Button
+  Name 003 Nightmare`, `Menu - 3d - Diff - Nightmare Button Action`, the save slot's `allow nightmare difficulty` (in `Title - Save
+  Slot Load/Save`) and the difficulty menu's parameter `disallow nightmare setting` (in `Menu - 3d - Diff - Create`); `global.bld`
+  has `adventure mode complete - nightmare`, and the achievements "Complete Story Mode on the Nightmare difficulty setting".
+- Why no hook yet: unlike Swap Force and Imaginators, the executable has no `nightmare_difficulty_unlocked` and no native check (no
+  shape match of Swap Force's `sub_829CC788` or of its menu's `sub_82C12BC0`); the decision is a script variable of the title
+  level. The lead: script variables are `ScriptReference` objects, as Giants' portal prompt reads them ([Giants' boot.md](https://github.com/arkeyan-forge/giants/blob/main/docs/boot.md),
+  "Portal prompt"); answering `allow nightmare difficulty` (or clearing `disallow nightmare setting`) where the script reads it
+  needs the script VM's variable read, not found yet.
+
 ## Where to start
-- Build: `cmake -S . -B build-trapteam -G Ninja -DCMAKE_BUILD_TYPE=Release -DSSA_GAME=trapteam`, then
+- Build: `cmake -S . -B build-trapteam -G Ninja -DCMAKE_BUILD_TYPE=Release -DARKEYAN_GAME=trapteam`, then
   `nice ninja -j4 -C build-trapteam ArkeyanRuntime` (the executable is `Skylanders Trap Team`). `private/trapteam/ppc/` is made by
   XenonRecomp from `config/` ([day1.md](https://github.com/arkeyan-forge/forge/blob/main/docs/porting/day1.md) step 2) and `shader_cache.cpp` by
   `SKY_GAME=trapteam tools/shaders/build_cache.sh <disc> <dump dir>`.

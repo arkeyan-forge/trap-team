@@ -71,7 +71,7 @@ inside it (160 MB and the others) are asked for by `sub_82366070`'s callers with
 160 MB, and whether the console's `MmAllocatePhysicalMemoryEx` of 28-byte large-page blocks costs 64 KB each as ours does (about 3000 of them were live at the peak) [?].
 
 ## Past the "Place a Skylander" prompt (2026-10-30) [V]
-Figure: a blank **Trap Master**, Gusto (type 450, Air), made and placed by `SKY_PORTAL_PLACE=new:450` with `SKY_PORTAL=emulated` (`SSAFigureTest` reads it as valid). The game
+Figure: a blank **Trap Master**, Gusto (type 450, Air), made and placed by `SKY_PORTAL_PLACE=new:450` with `SKY_PORTAL=emulated` (`ArkeyanFigureTest` reads it as valid). The game
 **accepts it**: no "wrong portal" screen, no "301" error. Portal log: `R` answered `02 1B`; then `Q 51 20` (the first read, answered with block 0), `Q 51 10 <block>` for 52 reads
 and 23 `W` writes in a run (block 1 holds `C2 01`, the toy type 450 as a little-endian variant word); `J` (the light, 145 per run) and `V`/`L` stay unanswered, `M` never comes.
 The prompt ("PLAYER ONE, PLACE A SKYLANDER ON THE TRAPTANIUM PORTAL") disappears and the game goes through a vortex loading effect into the level.
@@ -111,7 +111,7 @@ A run steered live (`SKY_PRESS_FILE` lines, a frame every 2 s looked at between 
 - **The portal takes one trap.** Gusto plus two traps (Magic and Water) already shows "There are too many Traps on the Traptanium Portal." (as with four and with ten); Gusto plus one plays [V]. Anything that needs a second element has to restart the game: there is no way to swap a trap live from the press file.
 - **The tutorial is playable by hand** [V]: Buzz's dialogue (A), barrels (X), the plank bridges (jump, hold the stick and press A for 0.4 s), a cannon whose hint says "Press RT to fire cannon" (RT launches Gusto over the stone gate to a chest and a rope bridge, with turtle enemies on balloons further on), a hint that each chapter holds 3 chests. The orange path east of Buzz and the river below the chest are dead ends: Gusto falls off the island and returns to a checkpoint (a blue pad at the cave mouth), over and over. The coin cave the first attempt ended in is that river bed [?] (same look, not proved the same place).
 - **Stick input is camera-relative and the camera turns by itself**, so blind steps drift; a press shorter than a game frame is lost: hold taps 0.3-0.4 s. At a load average of 28-50 (other lanes building) the game ran at about 0.6 game seconds per second, so every hold lasted that much less in game time: judge the pace from the frames, not the clock.
-- **Game writes seen** [V]: Gusto's tag is rewritten by the game in a run (52 `W`, gold 12, "452 s played", valid, sequence 5, read back by `SSAFigureTest <dump>`); the empty trap's file is not touched (sequence 1, count 0), as in the first attempt. No `M`.
+- **Game writes seen** [V]: Gusto's tag is rewritten by the game in a run (52 `W`, gold 12, "452 s played", valid, sequence 5, read back by `ArkeyanFigureTest <dump>`); the empty trap's file is not touched (sequence 1, count 0), as in the first attempt. No `M`.
 - **Press script** (`runtime/host/input.cpp`, [input.md](https://github.com/arkeyan-forge/forge/blob/main/docs/runtime/xbox360/input.md)): `lb`, `rb`, `lt` and `rt` now exist in `SKY_PRESS` and `SKY_PRESS_FILE` (the cannon needed RT; the docs said the shoulders were missing).
 - **Not done [?]:** the first villain, which element and which level it is in, the trap prompt, the capture write, the reload, the evolved villain, the lost-and-caught-again case. The next try needs either a recorded route to the first villain (a person's run through the chapter, as a `SKY_PRESS` script with times) or a way to see the player's place; with the 0.6 game speed under load, a route should be recorded on an idle machine.
 
@@ -129,7 +129,7 @@ the emulated portal, after the speaker fix ([portal.md](https://github.com/arkey
   20-22, 24-26, 28-30, 32-34, then 8: copy A, its header last. Copy B (written by the game when the empty trap first came, 21 `W`, sequence 1) is not
   touched. The trap reads back `valid, count 1, selected 20, evolved 0, seq 2` with our codec; the decrypted diff is three blocks: block 8 (count 1,
   sequence 2, the CRCs), block 9 byte 0 = `0x14` (the villain at packed `0x10`, `figures::TrapVillainOffset`) and block 33 (packed `0x130`
-  `C2 FF A3 80 FF`, where copy B has `C2 FF 01 80 FF`: the byte `0x132` changes on a capture, meaning unknown [?]). Test: `SSAFigureTest` `TestTrapCapture`.
+  `C2 FF A3 80 FF`, where copy B has `C2 FF 01 80 FF`: the byte `0x132` changes on a capture, meaning unknown [?]). Test: `ArkeyanFigureTest` `TestTrapCapture`.
 - **Playing the villain** [V]: LT turns Gusto into Sheep Creep (HUD "Sheep Creep", purple bar), it moves and attacks; LT again gives Gusto back. The game
   opens `\character\1020_sheep.arc` and `ally_icon_1020` when it reads the full trap.
 - **Off and on** [V]: through the Toy Box (`SKY_TOYBOX_SCRIPT_FILE`, live items): the trap's sheet says "Holds Sheep Creep"; "Take off Trap" while Gusto

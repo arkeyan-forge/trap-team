@@ -91,6 +91,9 @@ namespace game
     constexpr uint32_t UltrawideCompositeVertices = 3; // one screen triangle, vertex constant c0 = 2/1280
     constexpr int UltrawideCompositeSlot = 0;
     constexpr bool UltrawideCompositeVpos = false;
+    // Upscaling (d3d/upscale.h): the vertex constant where the position matrix starts: c0-c3, row vectors (Alchemy, as
+    // Giants'; the camera vote's "[upscale] last 900 frames" line checks it).
+    constexpr int32_t UpscalePositionMatrix = 0;
     // The post pass whose constants and fetch offsets give its kernel in guest pixels: at scale N, in host pixels.
     constexpr uint64_t HostKernelPixelShader =
         0x6BD91E6572C6581Cull; // tone map + FXAA 3.11 in one pass (c0, c1 = +-0.5, 8, -4 / size)

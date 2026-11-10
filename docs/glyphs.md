@@ -64,7 +64,7 @@ constants c5-c8: a rotation about the centre, a sheen) [V]. While a style other 
 upside down); the renderer sets c5-c8 to the identity for the card's two shaders when the glyph is bound
 (`glyphs::UvMatrix`), so the glyph stays upright and still; the letters' draw (639 indices, XXH3 of its indices
 `66DB72A301169C73`) is skipped (`glyphs::HidesDraw`). The Xbox 360 style leaves all three as the game draws them.
-Unit test: `SSAGlyphModelsTest`.
+Unit test: `ArkeyanGlyphModelsTest`.
 
 **Captures** [V]: `SKY_PORTAL_PLACE=new:450`, the tutorial route of `tools/regress/trapteam_capture.route` (the cannon
 at 157-169 s after the level opens, the first chest at about 306 s), a shot every 1.5 s (local: `private/glyphs3d-runs/proof/`).
@@ -75,6 +75,22 @@ at 157-169 s after the level opens, the first chest at about 306 s), a shot ever
 | `key3` (keyboard, default keys) | a keycap "3" on the card, upright and still at 157-167 s |
 | `ps5` (`SKY_GLYPHS_SCRIPT=ps5:5`: PlayStation) | a dark R2 pill on the card; the hint's R2 too |
 | `chest` (keyboard, `[trapteam.input] key_rt=O`, to 322 s) | the cannon's card and hint read O; at 306 s the **chest's** card (the owner's scene, "Each Chapter contains 3 hidden treasure chests") reads O |
+## The RT card showed the keycap and the 360's letters together (0.9.0, fixed 2026-11-06) [V]
+**What the owner saw.** On 0.9.0 with the keyboard style, the cannon's card showed the keycap "3" and, under it, the
+extruded "RT". **Cause [V]:** `1441c5f` (2026-11-05, world prompts pair face and letters, for SuperChargers and
+Imaginators) replaced the renderer's `glyphs::HidesDraw` call in `IssueDraw` (`runtime/d3d/render.cpp`) by the pairing,
+so the 639-index letters of `RtCardModel` were drawn again; nothing in `ArkeyanGlyphModelsTest` called the renderer, so
+it stayed green. **Fix:** the call is back, before the pairing (only a `Model` texture's letters; a `Prompt` is still told by
+its pair). **Proof:** the tutorial's cannon (`tools/regress/trapteam_capture.route`, keyboard, a shot every 2 s; local
+`private/runs/before1` and `after2`): the 0.9.1 binary draws "3" over "RT", the fixed build draws the "3" alone, same
+moment. The log of the card's draws in the fixed run: the card's face (768 indices, hash `148CE04D4F1F9E49`) in five
+shader pairs, the letters never reaching the draw (hidden); no other index count samples the card's picture besides a
+scene shader (`4A09A50DF47BAD6F`) that keeps the slot bound from the previous draw [?]. **Not found:** another copy of
+the RT letters (levels' own `Button_360_RT`, other LODs) or an LT card: only the tutorial was reached, and its chest
+uses the same hash; the face also has two passes by a vertex shader (`443541580AF981B0`) that `RtCardModel` does not list, so
+its sheen matrix is not held still in them [?] (not seen on a frame). Unit test: a second model with other letters
+(`ArkeyanGlyphModelsTest`: each hides only its own).
+
 ## The keycap's label on a French keyboard (2026-11-03)
 **What the owner saw.** With the keyboard style, the RT keycap of the cannon's hint ("Press RT to fire cannon") showed two
 vertical bars. **Cause [V]:** a keycap shows the bound key's name on the keyboard's layout (`SDL_GetKeyFromScancode`
@@ -84,7 +100,7 @@ gives `1 -> &`, `2 -> é`, `3 -> "`, `4 -> '` ... `0 -> à`, and the digit with 
 SDL keeps the US map (`3 -> 3`), which is why every scripted run showed "3". The same keycap is drawn for the 3D RT card
 and for LT (default `1`: `&` on AZERTY). **Fix:** `glyphs::KeycapLabel` (`runtime/host/glyph_models.cpp`) shows the
 digit a number-row key types with Shift when the layout types a symbol without it (the keycap's printed digit); other keys
-are unchanged. Unit test: `SSAGlyphModelsTest` (`"` with `3` gives `3`, US `3` stays, `Backspace` gives `Bksp`). Not
+are unchanged. Unit test: `ArkeyanGlyphModelsTest` (`"` with `3` gives `3`, US `3` stays, `Backspace` gives `Bksp`). Not
 seen in a window [?]: our runs are offscreen; the owner checks it on the real layout (below).
 
 ## The villain gauge (2026-11-03) [V]

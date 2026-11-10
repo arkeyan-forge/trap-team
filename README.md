@@ -13,7 +13,7 @@ Status: in the kit and off by default; the tutorial is playable ([status](docs/s
 | `config/` | XenonRecomp input: `TrapTeam.toml`, `TrapTeam_switch_tables.toml` |
 | `swap_wait.cpp` | the render thread's inlined spin on its last swap (a mid-instruction hook in `TrapTeam.toml`) made a wait for the next graphics interrupt (2026-11-03, [renderer_threads.md](https://github.com/arkeyan-forge/forge/blob/main/docs/runtime/gpu/renderer_threads.md), "Trap Team's swap wait") |
 
-Build: `cmake -S . -B build-trapteam -G Ninja -DSSA_GAME=trapteam`. The generated code is `private/trapteam/ppc/` and the game's
+Build: `cmake -S . -B build-trapteam -G Ninja -DARKEYAN_GAME=trapteam`. The generated code is `private/trapteam/ppc/` and the game's
 derived data `private/trapteam/`. The engine's hooks are in `engines/alchemy/`.
 
 ## Docs

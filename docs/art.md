@@ -22,7 +22,7 @@ padded names: [game_art.md](https://github.com/arkeyan-forge/forge/blob/main/doc
 `tools/trapteam_catalogue.py` maps them without a table of ours. "Every toy it knows" (Trap Masters, cores, minis, Eon's Elite, older games' toys, items, adventure
 packs) is the list of that arc: 180 toy and trap types of the four games (348 pictures with the traps); the 16 Swap Force bottoms, 8 Giants' plain figures
 (their only picture here is a later repose), the Giants' Dragonfire Cannon and Scorpion Striker Catapult, Fiery Forge and Arkeyan Crossbow have no plain picture:
-**28 toys show a drawn icon from this disc alone** (their own game's disc gives them one, by the rule in game_art.md; `SSAArtTest` with `TRAPTEAM_ISO` counts them).
+**28 toys show a drawn icon from this disc alone** (their own game's disc gives them one, by the rule in game_art.md; `ArkeyanArtTest` with `TRAPTEAM_ISO` counts them).
 
 ## The game's own tables [V]
 

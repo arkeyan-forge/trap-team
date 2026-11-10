@@ -10,7 +10,7 @@ Trap Team's is data: its catalogue entry ([art.md](art.md)), its pictures from t
 | Seats | Player 1, Player 2 ("needs a 2nd controller"), **Trap**, Magic item, Adventure (the catalogue's 5 seats); figure cards with the game's own pictures |
 | A core on Player 1 | Fling Kong: `P1: Fling Kong on slot 0`, the game takes it |
 | A trap on the Trap seat | Biter's Bane (an empty Magic Trap, shape 2): its own slot (4), the game takes it; its picture is the trap-screen picture of that shape |
-| A trap's sheet | picture, name = the shape, "Magic Trap · Trap shape · Magic", **"Can hold 3 villains"**: the villains of the trap's element from the game's table, their vault pictures and names |
+| A trap's sheet | picture, name = the shape, "Magic Trap · Shape · Magic", **"Can hold 3 villains"**: the villains of the trap's element from the game's table, their vault pictures and names |
 | Sheets | a Trap Master (Gusto), an Eon's Elite (Eruptor, badge), a mini (Trigger Snappy) |
 | Add a figure | by element (Magic ... Dark), then "Minis and sidekicks" and "Traps" (the 11 traps, their 61 shapes and decorations as versions); 180 toys read by the game; every portrait is the game's |
 
@@ -21,7 +21,7 @@ shows it; the launcher's Edit chooses the villain (a list) and the Evolved switc
 [V] Seen in the game (2026-10-31, a crafted evolved Gulper trap in the collection, the trap seat's sheet): "Holds The Gulper · Evolved" over the element's six villains. `tools/regress/trapteam_toybox.sh` does not check this row yet.
 
 ## Placeholders [V]
-28 toys draw a generated icon from this disc alone (full list in `SSAArtTest`'s output with `TRAPTEAM_ISO`): 8 Giants' figures (only a later repose has a picture here), Dragonfire Cannon and Scorpion
+28 toys draw a generated icon from this disc alone (full list in `ArkeyanArtTest`'s output with `TRAPTEAM_ISO`): 8 Giants' figures (only a later repose has a picture here), Dragonfire Cannon and Scorpion
 Striker Catapult, Fiery Forge, Arkeyan Crossbow, the 16 swappers' bottoms (a swapper shows its top: Trap Team's Toy Box has no swapper card yet; Swap Force's halves come from its own disc).
 The Toy Box does not tell a Trap
 Master from a core on its sheet (both read "Air · from Trap Team"). Shape names other than the catalogue's older ones are "Shape N" ([art.md](art.md)).

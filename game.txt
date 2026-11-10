@@ -3,9 +3,14 @@
 id=trapteam
 name=Skylanders Trap Team
 runtime=Skylanders Trap Team
-version=0.1.0
+version=0.1.4
 toml=TrapTeam.toml
 xex_sha256=f1d2373e4507e21cc371e6f22d02e909602a1b5bc4704896c3c099cc64002a35,95e273f479ad71198d7daaa6234e6ee6364861ce29b002ba782154a1fcf08d3c
+# The releases' loaded images (decrypted, decompressed; same order as xex_sha256), labels and title ID: a disc of
+# another edition with one of these images runs the same code (docs/tools/edition_finder.md).
+image_sha256=265c807d93716525e611839fb30859c1eb8a2a7cc700074d57f7b4cb3f78d458,265c807d93716525e611839fb30859c1eb8a2a7cc700074d57f7b4cb3f78d458
+releases=Europe;Europe (Fr, Nl)
+title_id=41560911
 # Disc shaders span the .arc/.bld archives (IGA v11 / IGZ v8); deduplicate by container content.
 shaders=igz:all
 # Run-time collection: 18 containers: 16 absent from the disc that the game builds at start, and Bink's two YUV to RGB
